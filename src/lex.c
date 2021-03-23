@@ -116,7 +116,13 @@ static int scan_token(char **input, struct token *ret) {
         goto end;      
     } else if(token_literal_str(&identifier, cnt, &new_token) == 0) {
         goto end;
-    } token_literal_char(&identifier, cnt, &new_token);
+    } else if(token_literal_char(&identifier, cnt, &new_token) == 0) {
+        goto end;
+    }
+
+    new_token.type = TYPE_IDENTIFIER;
+    new_token.value = TYPE_IDENTIFIER;
+    new_token.identifier = identifier;
 
 end:
     *ret = new_token;    
@@ -133,6 +139,9 @@ int tokenize(char *input, struct token **ret) {
 
         vec_push(struct token, token_list, new_token);
     }
+
+    struct token terminator = { .type = TERMINATOR, .value = TERMINATOR };
+    vec_push(struct token, token_list, terminator);
 
     *ret = token_list.data;
     return token_list.element_cnt;
