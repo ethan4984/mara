@@ -4,11 +4,21 @@
 #include <stdint.h>
 #include <stddef.h>
 
-enum {
-    PARSE_TOKEN_TYPE,
-    PARSE_TOKEN_EXPR,
-    PARSE_TOKEN_EQUALITY,
-    PARSE_TOKEN_OPERATOR,
+struct var_declaration {
+    const char *identifier;
+    int type;
+
+    struct token *initaliser;
+    size_t token_cnt;
 };
+
+struct assignment {
+    struct var_declaration var;
+
+    struct token *initaliser;
+    size_t token_cnt;
+};
+
+void parse_expression(struct token **token_list, int *depth);
 
 #endif

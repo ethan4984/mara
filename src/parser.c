@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <parser.h>
 #include <lib/vec.h>
 #include <lex.h>
 
@@ -7,7 +8,7 @@ size_t eval_rpn(struct token *token_list, int token_cnt) {
 
     for(int i = 0; i < token_cnt; i++) {
         if(token_list[i].value == LITERAL_INT) {
-            size_t value = strtol(token_list[i].identifier, (void*)NULL, 10);
+            size_t value = strtol(token_list[i].identifier, NULL, 10);
             stack_push(size_t, stack, value);
         } else if(token_list[i].type == TYPE_OPERATOR) {
             size_t elem1 = stack_pop(size_t, stack);
@@ -73,6 +74,59 @@ int infix_to_rpn(struct token **token_list, int token_cnt) {
     return output_stack.data.element_cnt;
 }
 
-void parse_expression(struct token *token_list, int token_cnt) {
+void parse_declare(struct token **token_list) {
+    int token_cnt = 0;
+    *token_list += token_cnt;
+}
 
+void parse_scope(struct token *token_list) { 
+    int depth = 1;
+    while(depth && (token_list->type != TERMINATOR && token_list->value != TERMINATOR))
+        parse_expression(&token_list, &depth);
+}
+
+void parse_expression(struct token **token_list, int *depth) {
+    switch(token_list[0]->type) {
+        case TYPE_DECLARE:
+            if( token_list[0]->value == TYPE_UINT8 ||
+                token_list[0]->value == TYPE_UINT16 ||
+                token_list[0]->value == TYPE_UINT32 ||
+                token_list[0]->value == TYPE_UINT64) 
+                parse_declare(token_list); 
+            else {
+                printf("[ERROR] unrecognized type");
+                exit(0);
+            }
+            break;
+        case TYPE_KEYWORD:
+            switch(token_list[0]->value) { 
+                case KEYWORD_IF:
+                    break;
+                case KEYWORD_WHILE:
+                    break;
+                case KEYWORD_FOR:
+                    break;
+                case KEYWORD_ASM:
+                    break;
+                case KEYWORD_RETURN:
+                    break;
+                case KEYWORD_BREAK:
+                    break;
+                case KEYWORD_CONTINUE:
+                    break;
+            }
+            break;
+        case TYPE_SEPARATOR:
+            switch(token_list[0]->value) {
+                case SEPARATOR_RIGHTC_BRACKET:
+                    (*depth)--;
+                    break;
+                case SEPARATOR_LEFTC_BRACKET:
+                    (*depth)++;
+            }
+            __attribute__((fallthrough));
+        default:
+            printf("[ERROR] unrecognized initaliser token\n");
+            exit(0);
+    }
 }

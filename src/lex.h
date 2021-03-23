@@ -49,7 +49,9 @@ enum {
     OPERATOR_LESS,
 
     OPERATOR_ASSOC_RIGHT,
-    OPERATOR_ASSOC_LEFT
+    OPERATOR_ASSOC_LEFT,
+
+    TERMINATOR
 };
 
 struct token {
