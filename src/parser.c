@@ -74,25 +74,46 @@ int infix_to_rpn(struct token **token_list, int token_cnt) {
     return output_stack.data.element_cnt;
 }
 
-void parse_declare(struct token **token_list) {
+struct absolute_statement *parse_declare(struct token **token_list, int *depth) {
+    struct var_declaration *var = malloc(sizeof(struct var_declaration));
+    struct absolute_statement *abs_expr = malloc(sizeof(struct absolute_statement));
     int token_cnt = 0;
+
+    abs_expr->var = var;
+
+    // implementation
+
     *token_list += token_cnt;
+
+    return abs_expr;
 }
 
-void parse_scope(struct token *token_list) { 
+void parse_scope(struct token *token_list, struct absolute_statement **ret, int *ret_cnt) { 
     int depth = 1;
-    while(depth && (token_list->type != TERMINATOR && token_list->value != TERMINATOR))
-        parse_expression(&token_list, &depth);
+    vec(struct absolute_statement*, statement_list);
+
+    while(depth && (token_list->type != TERMINATOR && token_list->value != TERMINATOR)) {
+        struct absolute_statement *abs_expr = NULL;
+        parse_expression(&token_list, &depth, &abs_expr);
+        if(abs_expr == NULL) {
+            break;
+        }
+
+        vec_push(struct absolute_statement, statement_list, abs_expr);
+    }
+
+    *ret = *statement_list.data;
+    *ret_cnt = statement_list.element_cnt;
 }
 
-void parse_expression(struct token **token_list, int *depth) {
+void parse_expression(struct token **token_list, int *depth, struct absolute_statement **ret) {
     switch(token_list[0]->type) {
         case TYPE_DECLARE:
             if( token_list[0]->value == TYPE_UINT8 ||
                 token_list[0]->value == TYPE_UINT16 ||
                 token_list[0]->value == TYPE_UINT32 ||
                 token_list[0]->value == TYPE_UINT64) 
-                parse_declare(token_list); 
+                *ret = parse_declare(token_list, depth); 
             else {
                 printf("[ERROR] unrecognized type");
                 exit(0);
