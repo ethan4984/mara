@@ -13,7 +13,7 @@ struct var_declaration {
 };
 
 struct assignment {
-    struct var_declaration var;
+    struct var_declaration *var;
 
     struct token *initaliser;
     size_t token_cnt;
@@ -24,7 +24,7 @@ struct absolute_statement {
     struct assignment *assignment;
 };
 
-void parse_expression(struct token **token_list, int *depth, struct absolute_statement **ret);
+void parse_expression(struct token **token_list, int *depth, struct absolute_statement **ret, struct absolute_statement *statement_list, int statemnet_cnt);
 void ssa_init(struct absolute_statement **list, int *statement_cnt);
 
 #endif

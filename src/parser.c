@@ -1,6 +1,7 @@
-# include <stdio.h>
+#include <stdio.h>
 #include <parser.h>
 #include <lib/vec.h>
+#include <string.h>
 #include <lex.h>
 
 size_t eval_rpn(struct token *token_list, int token_cnt) {
@@ -74,8 +75,50 @@ int infix_to_rpn(struct token **token_list, int token_cnt) {
     return output_stack.data.element_cnt;
 }
 
-struct absolute_statement *parse_declare(struct token **token_list, int *depth) {
-    struct var_declaration *var = malloc(sizeof(struct var_declaration));
+static struct var_declaration *find_var(struct absolute_statement *statement_list, int statement_cnt, const char *identifier) {
+    for(int i = 0; i < statement_cnt; i++) {
+        if(statement_list[i].var && strcmp(statement_list[i].var->identifier, identifier) == 0) {
+            return statement_list[i].var; 
+        }
+    }
+    return NULL;
+}
+
+static struct absolute_statement *parse_assignment(struct token **token_list, int *depth, struct absolute_statement *statement_list, int statement_cnt) {
+    struct absolute_statement *statement = calloc(sizeof(struct absolute_statement), 1);
+    struct assignment *assignment = malloc(sizeof(struct assignment));
+    statement->assignment = assignment;
+
+    const char *identifier = token_list[0]->identifier; 
+    (*token_list)++;
+
+    struct var_declaration *var = find_var(statement_list, statement_cnt, identifier);
+    if(!var) {
+        printf("[ERROR] Assignment on variable %s that does not exist\n", identifier);
+        exit(0);
+    }
+
+    assignment->var = var;
+
+    if(token_list[0]->type == TYPE_OPERATOR && token_list[0]->value == OPERATOR_EQUAL) {
+        (*token_list)++;
+    } else {
+        printf("[ERROR] unrecognised operator\n");
+        exit(0);
+    }
+    
+    int cnt = 0;
+    for(; token_list[0]->type != TYPE_SEPARATOR && token_list[0]->value != SEPARATOR_SIMI_COLON; cnt++, (*token_list)++);
+    (*token_list)++;
+
+    assignment->initaliser = *token_list - cnt;
+    assignment->token_cnt = cnt;
+
+    return statement;
+}
+
+static struct absolute_statement *parse_declare(struct token **token_list, int *depth, struct absolute_statement *statement_list, int statement_cnt) {
+    struct var_declaration *var = calloc(sizeof(struct var_declaration), 1);
     struct absolute_statement *abs_expr = malloc(sizeof(struct absolute_statement));
 
     abs_expr->var = var;
@@ -86,7 +129,7 @@ struct absolute_statement *parse_declare(struct token **token_list, int *depth) 
         token_list[0]->value != TYPE_UINT32 &&
         token_list[0]->value != TYPE_UINT64)) {
         printf("[ERROR] unrecognised type\n");
-        goto error;
+        exit(0);
     }
 
     var->type = token_list[0]->value;
@@ -97,14 +140,19 @@ struct absolute_statement *parse_declare(struct token **token_list, int *depth) 
         (*token_list)++;
     } else {
         printf("[ERROR] unrecognised identifier\n"); 
-        goto error;
+        exit(0);
+    }
+
+    if(find_var(statement_list, statement_cnt, var->identifier)) {
+        printf("[ERROR] Variable %s already exists\n", var->identifier);
+        exit(0);
     }
 
     if(token_list[0]->type == TYPE_OPERATOR && token_list[0]->value == OPERATOR_EQUAL) {
         (*token_list)++;
     } else {
         printf("[ERROR] unrecognised operator\n"); 
-        goto error;
+        exit(0);
     }
 
     int cnt = 0;
@@ -115,12 +163,6 @@ struct absolute_statement *parse_declare(struct token **token_list, int *depth) 
     var->token_cnt = cnt;
 
     return abs_expr;
-
-error:
-    free(var);
-    free(abs_expr);
-
-    exit(0);
 }
 
 void parse_scope(struct token *token_list, struct absolute_statement **ret, int *ret_cnt) { 
@@ -129,7 +171,7 @@ void parse_scope(struct token *token_list, struct absolute_statement **ret, int 
 
     while(depth || (token_list->type != TERMINATOR && token_list->value != TERMINATOR)) {
         struct absolute_statement *abs_expr = NULL;
-        parse_expression(&token_list, &depth, &abs_expr);
+        parse_expression(&token_list, &depth, &abs_expr, statement_list.data, statement_list.element_cnt);
         if(abs_expr == NULL) {
             break;
         }
@@ -142,7 +184,7 @@ void parse_scope(struct token *token_list, struct absolute_statement **ret, int 
     *ret_cnt = statement_list.element_cnt;
 }
 
-void parse_expression(struct token **token_list, int *depth, struct absolute_statement **ret) {
+void parse_expression(struct token **token_list, int *depth, struct absolute_statement **ret, struct absolute_statement *statement_list, int statement_cnt) {
     printf("Here lol parsing token %s\n", token_list[0]->identifier);
     switch(token_list[0]->type) {
         case TYPE_DECLARE:
@@ -150,7 +192,7 @@ void parse_expression(struct token **token_list, int *depth, struct absolute_sta
                 token_list[0]->value == TYPE_UINT16 ||
                 token_list[0]->value == TYPE_UINT32 ||
                 token_list[0]->value == TYPE_UINT64) {
-                *ret = parse_declare(token_list, depth); 
+                *ret = parse_declare(token_list, depth, statement_list, statement_cnt); 
             }
             else {
                 printf("[ERROR] unrecognized type");
@@ -182,6 +224,11 @@ void parse_expression(struct token **token_list, int *depth, struct absolute_sta
                     break;
                 case SEPARATOR_LEFTC_BRACKET:
                     (*depth)++;
+            }
+            break;
+        case TYPE_IDENTIFIER:
+            if(token_list[0]->value == TYPE_IDENTIFIER) { 
+                *ret = parse_assignment(token_list, depth, statement_list, statement_cnt);      
             }
             break;
         case TERMINATOR:

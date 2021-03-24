@@ -5,7 +5,7 @@
 int main() {
     struct token *token_list = NULL;
 //    char *input = "(2*(3+1)+420)/2";
-    char *input = "uint32 bruh=420-69;uint64 lmao=69-420;}";
+    char *input = "uint32 bruh=420-69;uint64 bruhl=69-420;bruh=69420;}";
     int cnt = tokenize(input, &token_list);
     printf("%d\n", cnt); 
     for(int i = 0; i < cnt; i++) {
@@ -26,7 +26,7 @@ int main() {
         if(statements[i].var) {
             printf("Variable: %s %d %ld\n", statements[i].var->identifier, statements[i].var->type, statements[i].var->token_cnt);
         } else if(statements[i].assignment) { 
-
+            printf("Assignment %s %d\n", statements[i].assignment->var->identifier, statements[i].assignment->token_cnt);     
         }
     }
 }
