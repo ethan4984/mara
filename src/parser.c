@@ -108,7 +108,8 @@ struct absolute_statement *parse_declare(struct token **token_list, int *depth) 
     }
 
     int cnt = 0;
-    for(; token_list[0]->type == TYPE_SEPARATOR && token_list[0]->value == SEPARATOR_SIMI_COLON; cnt++, (*token_list)++);
+    for(; token_list[0]->type != TYPE_SEPARATOR && token_list[0]->value != SEPARATOR_SIMI_COLON; cnt++, (*token_list)++);
+    (*token_list)++;
 
     var->initaliser = *token_list - cnt;
     var->token_cnt = cnt;
@@ -141,14 +142,15 @@ void parse_scope(struct token *token_list, struct absolute_statement **ret, int 
 }
 
 void parse_expression(struct token **token_list, int *depth, struct absolute_statement **ret) {
-    printf("Here lol\n");
+    printf("Here lol parsing token %s\n", token_list[0]->identifier);
     switch(token_list[0]->type) {
         case TYPE_DECLARE:
             if( token_list[0]->value == TYPE_UINT8 ||
                 token_list[0]->value == TYPE_UINT16 ||
                 token_list[0]->value == TYPE_UINT32 ||
-                token_list[0]->value == TYPE_UINT64) 
+                token_list[0]->value == TYPE_UINT64) {
                 *ret = parse_declare(token_list, depth); 
+            }
             else {
                 printf("[ERROR] unrecognized type");
                 exit(0);
@@ -180,6 +182,10 @@ void parse_expression(struct token **token_list, int *depth, struct absolute_sta
                 case SEPARATOR_LEFTC_BRACKET:
                     (*depth)++;
             }
+            break;
+        case TERMINATOR:
+            if(token_list[0]->value == TERMINATOR)
+                return;
             __attribute__((fallthrough));
         default:
             printf("[ERROR] unrecognized parse token\n");
