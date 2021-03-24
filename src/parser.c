@@ -1,4 +1,4 @@
-#include <stdio.h>
+# include <stdio.h>
 #include <parser.h>
 #include <lib/vec.h>
 #include <lex.h>
@@ -125,7 +125,7 @@ error:
 
 void parse_scope(struct token *token_list, struct absolute_statement **ret, int *ret_cnt) { 
     int depth = 1;
-    vec(struct absolute_statement*, statement_list);
+    vec(struct absolute_statement, statement_list);
 
     while(depth || (token_list->type != TERMINATOR && token_list->value != TERMINATOR)) {
         struct absolute_statement *abs_expr = NULL;
@@ -134,10 +134,11 @@ void parse_scope(struct token *token_list, struct absolute_statement **ret, int 
             break;
         }
 
-        vec_push(struct absolute_statement, statement_list, abs_expr);
+        vec_push(struct absolute_statement, statement_list, *abs_expr);
+        free(abs_expr);
     }
 
-    *ret = *statement_list.data;
+    *ret = statement_list.data;
     *ret_cnt = statement_list.element_cnt;
 }
 

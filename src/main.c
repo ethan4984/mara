@@ -29,5 +29,4 @@ int main() {
 
         }
     }
-        printf("%lx\n", (size_t)statements);
 }
